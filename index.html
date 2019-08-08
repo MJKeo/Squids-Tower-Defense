@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Squids Tower Defense</title>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+        <link rel="stylesheet" type="text/css" href="styles.css">
+    </head>
+    <BODY>
+        <div class="container text-center">
+            <div class="container">
+                <canvas id="myCanvas" height="500" width="500" style="border:1px solid #000000;"></canvas>
+            </div>
+            <div class="row">
+                <div id="towers_label" class="col-sm">
+                    <h5></h5>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm">
+                    <button id="lucas_button" style="color: red" onclick="changeTower(0)">Lucas (50)</button> 
+                </div>
+                <div class="col-sm">
+                    <button id="zach_button" onclick="changeTower(1)">Zach (300)</button> 
+                </div>
+                <div class="col-sm">
+                    <button id="mike_button" onclick="changeTower(2)">Mike (250)</button> 
+                </div>
+                <div class="col-sm">
+                        <button id="hunter_button" onclick="changeTower(3)">Hunter (500)</button> 
+                </div>
+                <div class="col-sm">
+                    <button id="naman_button" onclick="changeTower(4)">Naman (300)</button> 
+                </div>
+                <div class="col-sm">
+                    <button id="sandeepan_button" onclick="changeTower(5)">Sandeepan (300)</button> 
+                </div>
+                <div class="col-sm">
+                    <button id="jordan_button" onclick="changeTower(6)">Jordan (100)</button> 
+                </div>
+            </div>
+            <div class="row"></div>
+                <div class="col-sm">
+                    <button id="start_button" onclick="start()">Start</button> 
+                </div>
+            </div>
+        </div>
+        <div class="container text-center">
+            <h3 id="lives_count">Lives: 100</h3>
+        </div>
+        <div class="container text-center">
+            <h3 id="money_count">Cash: $300</h3>
+        </div>
+        <div class="container text-center">
+            <h5 id="description"></h5>
+        </div>
+        <script src="TowerDefense.js"></script>
+    </BODY>
+</html>
