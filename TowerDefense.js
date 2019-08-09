@@ -495,6 +495,9 @@ function moveBalloons() {
                 if (pathCollision(path[balloons[i].index].x, path[balloons[i].index].y, path[balloons[i].index].radius, i)) {
                     balloons[i].index++;
                     if (balloons[i].index == path.length) {
+                        if (balloons[i].layer == 5) {
+                            gameOver();
+                        }
                         lives -= (balloons[i].layer + 1);
                         balloons.splice(i, 1);
                         lives_count.innerText = ("Lives: " + lives);
