@@ -13,11 +13,15 @@
     <BODY>
         <div class="container text-center">
             <div class="container">
+                <h3 id="health_label">BOSS HEALTH</h3>
+                <canvas id="health_bar" height="25" width="500" style="border:1px solid #000000;"></canvas>
+            </div>
+            <div class="container">
                 <canvas id="myCanvas" height="500" width="500" style="border:1px solid #000000;"></canvas>
             </div>
             <div class="row">
                 <div class="col-sm">
-                    <h3 id="towers_label"></h3>
+                    <h4 id="towers_label"></h4>
                 </div>
             </div>
             <div class="row">
@@ -52,15 +56,24 @@
                 </div>
             </div>
         </div>
-        <div class="container text-center">
-            <h3 id="wave_label"></h3>
+        <div class="row text-center">
+            <div class="col-sm">
+                <h4></h4>
+            </div>
+            <div class="col-sm">
+                <h4 id="wave_label"></h4>
+            </div>
+            <div class="col-sm">
+                <h4 id="lives_count">Lives: 10</h4>
+            </div>
+            <div class="col-sm">
+                <h4 id="money_count">Cash: $300</h4>
+            </div>
+            <div class="col-sm">
+                <h4></h4>
+            </div>
         </div>
-        <div class="container text-center">
-            <h3 id="lives_count">Lives: 10</h3>
-        </div>
-        <div class="container text-center">
-            <h3 id="money_count">Cash: $300</h3>
-        </div>
+    </div>
         <div class="container text-center">
             <h5 id="description"></h5>
         </div>

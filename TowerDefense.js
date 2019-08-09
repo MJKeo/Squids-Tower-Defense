@@ -26,6 +26,8 @@ var startY;
 // DOCUMENT ELEMENTS
 var c = document.getElementById("myCanvas");
 var ctx = c.getContext("2d");
+var healthBar = document.getElementById("health_bar");
+var hbctx = healthBar.getContext("2d");
 var lives_count = document.getElementById("lives_count");
 var money_count = document.getElementById("money_count");
 var description = document.getElementById("description");
@@ -42,6 +44,7 @@ var freePlayButton = document.getElementById("free_play_button");
 var sendWaveButton = document.getElementById("send_wave_button");
 var towers_label = document.getElementById("towers_label");
 var wave_label = document.getElementById("wave_label");
+var healthLabel = document.getElementById("health_label");
 var towerTypes = [];
 towerTypes.push({x: -1, y: -1, radius: 10, range: 10, fireRate: -1, price: 50, counter: 0, color: "blue", name: "Lucas"});
 towerTypes.push({x: -1, y: -1, radius: 10, range: 50, fireRate: 4, price: 300, counter: 0, color: "purple", name: "Zach"});
@@ -101,6 +104,8 @@ sendWaveButton.classList.add('hidden');
 freePlayButton.classList.add('hidden');
 ctx.font = "30px Arial";
 ctx.fillText("Press Start", 180, 240);
+healthBar.classList.add('hidden');
+healthLabel.classList.add('hidden');
 
 // EVENT LISTENERS
 ctx.canvas.addEventListener('click', function(event) {
@@ -238,6 +243,10 @@ async function sendWave() {
         var gap = curWave[i][2];
         var rest = curWave[i][3]
         quantity = curWave[i][1]
+        if (waveIndex == 9) {
+            healthBar.classList.remove('hidden');
+            healthLabel.classList.remove('hidden');
+        }
         while (quantity > 0) {
             if (!started) {return};
             quantity--;
@@ -259,6 +268,9 @@ function draw() {
     ctx.clearRect(0, 0, c.width, c.height);
     ctx.fillStyle = '#4D9B41';
     ctx.fillRect(0, 0, c.width, c.height);
+    hbctx.clearRect(0, 0, healthBar.width, healthBar.height)
+    hbctx.fillStyle = 'red'
+    hbctx.fillRect(0, 0, bossHealth, healthBar.height)
     path.forEach(render);
     balloons.forEach(render);
     towers.forEach(render);
@@ -302,6 +314,8 @@ function towerShoot(){
                                 } else {
                                     bossHealth--;
                                     if (bossHealth == 0) {
+                                        healthBar.classList.add('hidden');
+                                        healthLabel.classList.add('hidden');
                                         win();
                                     }
                                 }
@@ -510,24 +524,20 @@ function moveBalloons() {
         }
     }
 
-    if (balloons.length == 0 && fullWaveSent) {
+    if (balloons.length == 0 && fullWaveSent && started) {
         fullWaveSent = false;
         clearInterval(moveBalloonsInterval);
         sendWaveButton.classList.remove('hidden');
-        money += waveCash[waveIndex - 1];
-        money_count.innerText = "Cash: $" + money;
+        if (waveCash[waveIndex - 1] != null) {
+            money += waveCash[waveIndex - 1];
+            money_count.innerText = "Cash: $" + money;
+        }
     }
 }
 
 // OTHER FUNCTIONS
 function makeMap() {
-    startButton.classList.add('hidden')
-    ctx.clearRect(0, 0, c.width, c.height);
-    towers_label.innerText = "Create your map (points left: 5)";
-    makingMap = true;
-}
-
-function start() {
+    console.log(startButton.innerText)
     if (startButton.innerText == "Restart") {
         tower_index = -1;
         lives = 10;
@@ -538,10 +548,20 @@ function start() {
         towers = [];
         projectiles = [];
         path = [];
+        bossHealth = 500;
+        lives_count.innerText = ("Lives: " + lives);
+        money_count.innerText = "Cash: $" + money;
     } else {
         startButton.innerText = "Restart";
     }
 
+    startButton.classList.add('hidden')
+    ctx.clearRect(0, 0, c.width, c.height);
+    towers_label.innerText = "Create your map (points left: 5)";
+    makingMap = true;
+}
+
+function start() {
     var leftDist = objectives[0].x;
     var rightDist = c.width - objectives[0].x;
     var topDist = objectives[0].y;
@@ -599,14 +619,15 @@ function gameOver() {
     tower_buttons.forEach(function(button) {
         button.classList.add('hidden');
     })
+    healthBar.classList.add('hidden');
+    healthLabel.classList.add('hidden');
     lives_count.classList.add('hidden');
-    lives_count.innerText = ("Lives: " + lives);
     money_count.classList.add('hidden');
-    money_count.innerText = "Cash: $" + money;
     description.innerText = "";
     towers_label.innerText = "";
     wave_label.innerText = "";
     startButton.classList.remove('hidden');
+    sendWaveButton.classList.add('hidden');
 }
 
 function win() {
@@ -652,7 +673,7 @@ async function freePlay() {
     })
     lives_count.classList.remove('hidden');
     money_count.classList.remove('hidden');
-    sendWaveButton.classList.remove('hidden');
+    sendWaveButton.classList.add('hidden');
     description.innerText =descriptions[0];
     towers_label.innerText = "Towers: ";
     tower_index = 0;
