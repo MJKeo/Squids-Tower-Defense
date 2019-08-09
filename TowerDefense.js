@@ -53,18 +53,21 @@ var balloons = [{x: 0, y: 75, radius: 5, color: "black", index: 0, move() {
         this.y += 1
     } 
 }}];
-var objectives = [{x: 75, y: 75, radius: 5, color: "red"}, {x: 195, y: 80, radius: 5, color: "orange"}, {x: 250, y: 125, radius: 5, color: "yellow"}, 
+/*var objectives = [{x: 75, y: 75, radius: 5, color: "red"}, {x: 195, y: 80, radius: 5, color: "orange"}, {x: 250, y: 125, radius: 5, color: "yellow"}, 
 {x: 360, y: 145, radius: 5, color: "green"}, {x: 240, y: 325, radius: 5, color: "blue"}, {x: 120, y: 250, radius: 5, color: "pink"}, 
-{x: 120, y: 420, radius: 5, color: "purple"}, {x: 510, y: 420, radius: 5, color: "brown"}];
+{x: 120, y: 420, radius: 5, color: "purple"}, {x: 510, y: 420, radius: 5, color: "brown"}];*/
+var objectives = [];
 var path = [];
+var started = false;
+var mapMakePoints = 5;
 
 var setupInterval;
 
 // EVENT LISTENERS
-ctx.canvas.addEventListener('click', function(event){
-    if (!colliding) {
-        mouseX = event.clientX - ctx.canvas.offsetLeft;
-        mouseY = event.clientY - ctx.canvas.offsetTop;
+ctx.canvas.addEventListener('click', function(event) {
+    mouseX = event.clientX - ctx.canvas.offsetLeft;
+    mouseY = event.clientY - ctx.canvas.offsetTop;
+    if (started) {
         var curTower = towerTypes[tower_index];
         
         if (curTower.name == "Sandeepan") {
@@ -91,6 +94,20 @@ ctx.canvas.addEventListener('click', function(event){
             money -= towerTypes[tower_index].price;
             money_count.innerText = "Cash: $" + money;
         }
+    } else {
+        for(var i = 0; i < objectives.length; i++) {
+            if (isCollision(mouseX, mouseY, 5, objectives[i].x, objectives[i].y, objectives[i].radius)) {
+                console.log("bad");
+                return;
+            }
+        }
+        objectives.push({x: mouseX, y: mouseY, radius: 5, color: "black"})
+        mapMakePoints--;
+        towers_label.innerText = "Create your map (points left: " + mapMakePoints + ")";
+        if (mapMakePoints == 0) {
+            start();
+        }
+        objectives.forEach(render);
     }
 })
 
@@ -103,8 +120,14 @@ money_count.classList.add('hidden');
 ctx.font = "30px Arial";
 ctx.fillText("Press Start", 180, 240);
 
-function start() {
+function makeMap() {
     startButton.classList.add('hidden')
+    ctx.clearRect(0, 0, c.width, c.height);
+    towers_label.innerText = "Create your map (points left: 5)";
+}
+
+function start() {
+    started = true;
     setupInterval = setInterval(setup, 1);
     towers_label.innerText = "LOADING";
 }
@@ -118,6 +141,23 @@ function setup() {
     if (pathCollision(objectives[balloons[0].index].x, objectives[balloons[0].index].y, objectives[balloons[0].index].radius)) {
         balloons[0].index += 1;
         if (balloons[0].index == objectives.length) {
+            var leftDist = balloons[0].x;
+            var rightDist = c.width - balloons[0].x;
+            var topDist = balloons[0].y;
+            var bottomDist = c.height - balloons[0].y;
+            
+            if (leftDist == Math.min(leftDist, rightDist, topDist, bottomDist)) {
+                objectives.push({x: -2, y: balloons[0].y, color: "red"});
+            } else if (rightDist == Math.min(leftDist, rightDist, topDist, bottomDist)) {
+                objectives.push({x: 502, y: balloons[0].y, color: "red"});
+            } else if (topDist == Math.min(leftDist, rightDist, topDist, bottomDist)) {
+                objectives.push({x: balloons[0].x, y: -2, color: "red"});
+            } else {
+                objectives.push({x: balloons[0].x, y: 502, color: "white"});
+            }
+            console.log(objectives[5].x);
+        }
+        if (balloons[0].x > c.width || balloons[0].x < 0 || balloons[0].y > c.height || balloons[0].y < 0) {
             ctx.clearRect(0, 0, c.width, c.height);
             path.forEach(render);
             clearInterval(setupInterval);
