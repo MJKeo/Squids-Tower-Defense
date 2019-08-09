@@ -14,6 +14,14 @@ var rest;
 var waveIndex = 0;
 var fullWaveSent = false;
 var bossHealth = 500;
+var minLayer = 0;
+var minQuantity = 10;
+var maxQuantity = 30;
+var minSeparation = 100;
+var maxSeparation = 1000;
+var oddsForBoss = -1;
+var startX;
+var startY;
 
 // DOCUMENT ELEMENTS
 var c = document.getElementById("myCanvas");
@@ -30,6 +38,7 @@ tower_buttons.push(document.getElementById("naman_button"));
 tower_buttons.push(document.getElementById("sandeepan_button"));
 tower_buttons.push(document.getElementById("jordan_button"));
 var startButton = document.getElementById("start_button");
+var freePlayButton = document.getElementById("free_play_button");
 var sendWaveButton = document.getElementById("send_wave_button");
 var towers_label = document.getElementById("towers_label");
 var wave_label = document.getElementById("wave_label");
@@ -89,6 +98,7 @@ tower_buttons.forEach(function(button) {
 lives_count.classList.add('hidden');
 money_count.classList.add('hidden');
 sendWaveButton.classList.add('hidden');
+freePlayButton.classList.add('hidden');
 ctx.font = "30px Arial";
 ctx.fillText("Press Start", 180, 240);
 
@@ -187,7 +197,7 @@ function setup() {
 }
 
 function sendBalloons(layer) {
-    balloons.push({x: 0, y: 75, radius: balloonRadii[layer], movementSpeed: balloonSpeed[layer], counter: 0, layer: layer, color: balloonLayers[layer],
+    balloons.push({x: startX, y: startY, radius: balloonRadii[layer], movementSpeed: balloonSpeed[layer], counter: 0, layer: layer, color: balloonLayers[layer],
         index: 0, seduced: false, hunterx: 0, huntery: 0, value: 10, move() {
        if (this.seduced) {
            if (this.x > this.hunterx) {
@@ -288,7 +298,7 @@ function towerShoot(){
                                         balloons[i].color = balloonLayers[balloons[i].layer];
                                         balloons[i].radius = balloonRadii[balloons[i].layer];
                                     }
-                                    return;
+                                    continue;
                                 } else {
                                     bossHealth--;
                                     if (bossHealth == 0) {
@@ -498,42 +508,56 @@ function moveBalloons() {
     }
 
     if (balloons.length == 0 && fullWaveSent) {
+        fullWaveSent = false;
         clearInterval(moveBalloonsInterval);
-        money += waveCash[waveIndex - 1];
         sendWaveButton.classList.remove('hidden');
+        money += waveCash[waveIndex - 1];
+        money_count.innerText = "Cash: $" + money;
     }
 }
 
 // OTHER FUNCTIONS
 function makeMap() {
     startButton.classList.add('hidden')
-    startButton.innerText = "Restart";
     ctx.clearRect(0, 0, c.width, c.height);
     towers_label.innerText = "Create your map (points left: 5)";
     makingMap = true;
 }
 
 function start() {
+    if (startButton.innerText == "Restart") {
+        tower_index = -1;
+        lives = 10;
+        money = 300;
+        mapMakePoints = 5;
+        waveIndex = 0;
+        objectives = [];
+        towers = [];
+        projectiles = [];
+        path = [];
+    } else {
+        startButton.innerText = "Restart";
+    }
+
     var leftDist = objectives[0].x;
     var rightDist = c.width - objectives[0].x;
     var topDist = objectives[0].y;
     var bottomDist = c.height - objectives[0].y;
-    var x, y;
     
     if (leftDist == Math.min(leftDist, rightDist, topDist, bottomDist)) {
-        x = -1;
-        y = objectives[0].y;
+        startX = -1;
+        startY = objectives[0].y;
     } else if (rightDist == Math.min(leftDist, rightDist, topDist, bottomDist)) {
-        x = 501;
-        y = objectives[0].y;
+        startX = 501;
+        startY = objectives[0].y;
     } else if (topDist == Math.min(leftDist, rightDist, topDist, bottomDist)) {
-        x = objectives[0].x;
-        y = -1;
+        startX = objectives[0].x;
+        startY = -1;
     } else {
-        x = objectives[0].x;
-        y = 501;
+        startX = objectives[0].x;
+        startY = 501;
     }
-    balloons = [{x: x, y: y, radius: 5, color: "black", index: 0, move() {
+    balloons = [{x: startX, y: startY, radius: 5, color: "black", index: 0, move() {
         if (this.x > objectives[this.index].x) {
             this.x -= 1
         } else if (this.x < objectives[this.index].x) {
@@ -564,15 +588,6 @@ function gameOver() {
     ctx.fillText("Game Over", 180, 240);
     ctx.fillText("You made it to round " + (waveIndex + 1), 100, 270);
     started = false;
-    tower_index = -1;
-    lives = 10;
-    money = 300;
-    mapMakePoints = 5;
-    waveIndex = 0;
-    objectives = [];
-    towers = [];
-    projectiles = [];
-    path = [];
     clearInterval(sendBalloonsInterval);
     clearInterval(moveBalloonsInterval);
     clearInterval(drawInterval);
@@ -593,22 +608,14 @@ function gameOver() {
 
 function win() {
     changeTower(0);
+    balloons = [];
     ctx.font = "30px Arial";
     ctx.fillStyle = 'blue';
-    ctx.fillRect(100, 200, 300, 300);
-    ctx.fillStyle = 'red';
+    ctx.fillRect(100, 200, 200, 100);
+    ctx.fillStyle = 'white';
     ctx.fillText("Congratulations!", 180, 240);
     ctx.fillText("You win!", 190, 270);
     started = false;
-    tower_index = -1;
-    lives = 10;
-    money = 300;
-    waveIndex = 0;
-    mapMakePoints = 5;
-    objectives = [];
-    towers = [];
-    projectiles = [];
-    path = [];
     clearInterval(sendBalloonsInterval);
     clearInterval(moveBalloonsInterval);
     clearInterval(drawInterval);
@@ -625,6 +632,55 @@ function win() {
     towers_label.innerText = "";
     wave_label.innerText = "";
     startButton.classList.remove('hidden');
+    freePlayButton.classList.remove('hidden');
+}
+
+async function freePlay() {
+    started = true;
+    fullWaveSent = false;
+    wave_label.innerText = "Free Play";
+    setInterval(increaseDifficulty, 60000)
+    moveBalloonsInterval = setInterval(moveBalloons, 10);
+    drawInterval = setInterval(draw, 10);
+    towerShootInterval = setInterval(towerShoot, 20);
+    moveProjectilesInterval = setInterval(moveProjectiles, 5);
+    tower_buttons.forEach(function(button) {
+        button.classList.remove('hidden');
+    })
+    lives_count.classList.remove('hidden');
+    money_count.classList.remove('hidden');
+    sendWaveButton.classList.remove('hidden');
+    description.innerText =descriptions[0];
+    towers_label.innerText = "Towers: ";
+    tower_index = 0;
+    wave_label.innerText = "Wave: 0/10";
+
+    var i = 0;
+    while (i > -1) {
+        i++;
+        var layer = Math.round(1 + Math.random() * (balloonLayers.length - 1));
+        if (layer > 4) {
+            layer = 4;
+        }
+        var quantity = Math.round(minQuantity + Math.random() * maxQuantity);
+        var separation = Math.round(minSeparation + Math.random() * maxSeparation);
+
+        while (quantity > 0) {
+            if (!started) {return};
+            quantity--;
+            sendBalloons(layer);
+            await sleep(separation);
+        }
+    }
+}
+
+function increaseDifficulty() {
+    minLayer++;
+    minQuantity += 5;
+    maxQuantity += 5;
+    minSeparation -= 10;
+    maxSeparation -= 10;
+    oddsForBoss++;
 }
 
 function goBerserk(item) {
