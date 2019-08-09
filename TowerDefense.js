@@ -15,11 +15,12 @@ tower_buttons.push(document.getElementById("jordan_button"));
 var startButton = document.getElementById("start_button");
 var towers_label = document.getElementById("towers_label");
 var towerTypes = []
+var naman_time = 1000;
 towerTypes.push({x: -1, y: -1, radius: 10, range: 10, fireRate: -1, price: 50, counter: 0, color: "blue", name: "Lucas"});
 towerTypes.push({x: -1, y: -1, radius: 10, range: 50, fireRate: 4, price: 300, counter: 0, color: "purple", name: "Zach"});
 towerTypes.push({x: -1, y: -1, radius: 10, range: 70, fireRate: 12, price: 250, counter: 0, color: "orange", name: "Mike"});
 towerTypes.push({x: -1, y: -1, radius: 10, range: 60, fireRate: 2, price: 500, counter: 0, color: "pink", name: "Hunter"});
-towerTypes.push({x: -1, y: -1, radius: 10, range: 60, fireRate: 1, price: 500, counter: 0, color: "white", name: "Naman"});
+towerTypes.push({x: -1, y: -1, radius: 10, range: 60, fireRate: -1, price: 300, counter: naman_time, color: "white", name: "Naman"});
 towerTypes.push({x: -1, y: -1, radius: 10, angle: 0, armX: 30, armY: 0, range: 30, fireRate: 120, price: 300, counter: 0, color: "brown", name: "Sandeepan"});
 towerTypes.push({x: -1, y: -1, radius: 10, range: 50, fireRate: 30, price: 100, counter: 0, color: "black", name: "Jordan"});
 var balloonLayers = ["red", "blue", "green"];
@@ -28,7 +29,7 @@ descriptions.push("Lucas is pretty much as useless in this game as he is in real
 descriptions.push("Zach asks out the balloons in the back of a Mustang, making them feel very awkward so they move slower");
 descriptions.push("Mike is not very creative so he is just a basic tower");
 descriptions.push("Hunter seduces the balloons with his luscious locks, then strips away all their layers");
-descriptions.push("Naman has not given me a suggestion yet");
+descriptions.push("Naman may look like he's chilling at first, but he's secretly powering up to go nuts on these balloons");
 descriptions.push("Sandeepan drops the people's elbow on these balloons, they don't stand a chance");
 descriptions.push("Jordan approaches the balloons. They assume he's trying to rob them so they throw him their wallet and move faster to run away. You get $5 per balloon");
 var tower_index = -1;
@@ -71,7 +72,7 @@ ctx.canvas.addEventListener('click', function(event){
                 counter: 0, color: curTower.color, name: curTower.name, angle: 0, armX: mouseX, armY: mouseY}
         } else {
             var tempTower = {x: mouseX, y: mouseY, radius: curTower.radius, range: curTower.range, fireRate: curTower.fireRate, price: curTower.price, 
-                counter: 0, color: curTower.color, name: curTower.name}
+                counter: curTower.counter, color: curTower.color, name: curTower.name}
         }
         if (money >= towerTypes[tower_index].price) {
             for(var i = 0; i < towers.length; i++) {
@@ -122,7 +123,7 @@ function setup() {
             clearInterval(setupInterval);
             balloons = [];
             var sendBalloonsInterval = setInterval(sendBalloons, 900);
-            var moveBalloonsInterval = setInterval(moveBalloons, 6);
+            var moveBalloonsInterval = setInterval(moveBalloons, 10);
             var drawInterval = setInterval(draw, 10);
             var towerShootInterval = setInterval(towerShoot, 20);
             var moveProjectilesInterval = setInterval(moveProjectiles, 5);
@@ -179,7 +180,7 @@ function changeTower(index) {
 function towerShoot(){
     towers.forEach(function(element) {
         element.counter += element.fireRate;
-        if (element.counter >= 120) {
+        if (element.counter >= 120 && element.name != "Naman") {
             element.counter = 0;
             var inRange = false;
             var target;
@@ -257,8 +258,31 @@ function towerShoot(){
             if (inRange) {
                 shoot(element, target);
             }
+        } else if (element.counter <= 0 && Math.abs(element.counter % 10) == 0 && element.name == "Naman") {
+            element.color = "orange";
+            goBerserk(element);
+            if (element.counter < -150) {
+                element.counter = naman_time;
+                element.color = "white"
+            }
         }
     });
+}
+
+function goBerserk(item) {
+    var berserkBullets = [];
+    berserkBullets.push({x: item.x, y: item.y, radius: 4, xChange: 1, yChange: 0, color: "yellow", towerName: "Naman"});
+    berserkBullets.push({x: item.x, y: item.y, radius: 4, xChange: -1, yChange: 0, color: "yellow", towerName: "Naman"});
+    berserkBullets.push({x: item.x, y: item.y, radius: 4, xChange: 0, yChange: 1, color: "yellow", towerName: "Naman"});
+    berserkBullets.push({x: item.x, y: item.y, radius: 4, xChange: 0, yChange: -1, color: "yellow", towerName: "Naman"});
+    berserkBullets.push({x: item.x, y: item.y, radius: 4, xChange: Math.sqrt(0.5), yChange: Math.sqrt(0.5), color: "yellow", towerName: "Naman"});
+    berserkBullets.push({x: item.x, y: item.y, radius: 4, xChange: -1 * Math.sqrt(0.5), yChange: Math.sqrt(0.5), color: "yellow", towerName: "Naman"});
+    berserkBullets.push({x: item.x, y: item.y, radius: 4, xChange: -1 * Math.sqrt(0.5), yChange: -1 * Math.sqrt(0.5), color: "yellow", towerName: "Naman"});
+    berserkBullets.push({x: item.x, y: item.y, radius: 4, xChange: Math.sqrt(0.5), yChange: -1 * Math.sqrt(0.5), color: "yellow", towerName: "Naman"});
+
+    for (var i = 0; i < berserkBullets.length; i++) {
+        projectiles.push(berserkBullets[i]);
+    }
 }
 
 function shoot(item, target) {
