@@ -8,6 +8,12 @@ var money = 300;
 var started = false;
 var mapMakePoints = 5;
 var makingMap = false;
+var curLayer;
+var quantity;
+var rest;
+var waveIndex = 0;
+var fullWaveSent = false;
+var bossHealth = 500;
 
 // DOCUMENT ELEMENTS
 var c = document.getElementById("myCanvas");
@@ -24,14 +30,16 @@ tower_buttons.push(document.getElementById("naman_button"));
 tower_buttons.push(document.getElementById("sandeepan_button"));
 tower_buttons.push(document.getElementById("jordan_button"));
 var startButton = document.getElementById("start_button");
+var sendWaveButton = document.getElementById("send_wave_button");
 var towers_label = document.getElementById("towers_label");
+var wave_label = document.getElementById("wave_label");
 var towerTypes = [];
 towerTypes.push({x: -1, y: -1, radius: 10, range: 10, fireRate: -1, price: 50, counter: 0, color: "blue", name: "Lucas"});
 towerTypes.push({x: -1, y: -1, radius: 10, range: 50, fireRate: 4, price: 300, counter: 0, color: "purple", name: "Zach"});
-towerTypes.push({x: -1, y: -1, radius: 10, range: 70, fireRate: 12, price: 250, counter: 0, color: "orange", name: "Mike"});
+towerTypes.push({x: -1, y: -1, radius: 10, range: 70, fireRate: 10, price: 250, counter: 0, color: "orange", name: "Mike"});
 towerTypes.push({x: -1, y: -1, radius: 10, range: 60, fireRate: 2, price: 500, counter: 0, color: "pink", name: "Hunter"});
 towerTypes.push({x: -1, y: -1, radius: 10, range: 60, fireRate: -1, price: 300, counter: naman_time, color: "white", name: "Naman"});
-towerTypes.push({x: -1, y: -1, radius: 10, angle: 0, armX: 30, armY: 0, range: 30, fireRate: 120, price: 300, counter: 0, color: "brown", name: "Sandeepan"});
+towerTypes.push({x: -1, y: -1, radius: 10, angle: 0, armX: 30, armY: 0, range: 30, fireRate: 40, price: 300, counter: 0, color: "brown", name: "Sandeepan"});
 towerTypes.push({x: -1, y: -1, radius: 10, range: 50, fireRate: 30, price: 100, counter: 0, color: "black", name: "Jordan"});
 var descriptions = [];
 descriptions.push("Lucas is pretty much as useless in this game as he is in real life");
@@ -48,8 +56,22 @@ var projectiles = [];
 var objectives = [];
 var path = [];
 var balloons = [];
-var balloonLayers = ["red", "blue", "green"];
-var balloonRadii = [5, 6, 7];
+var balloonLayers = ["red", "blue", "green", "yellow", "pink", "black"];
+var balloonRadii = [5, 6, 7, 8, 8, 10];
+var balloonSpeed = [2, 2, 2, 4, 6, 2];
+var wave = [[[0, 15, 500, 1000], [1, 10, 500, 100]]] // ORGANIZED by layer, quantity, gap, end rest
+wave.push([[0, 10, 300, 1000], [1, 15, 400, 1000], [2, 10, 500, 10]]) // WAVE 2
+wave.push([[0, 10, 10, 500], [1, 15, 300, 500], [2, 12, 300, 500], [1, 10, 100, 500], [3, 1, 0, 100]]) // WAVE 3
+wave.push([[1, 12, 100, 500], [2, 10, 400, 500], [3, 15, 500, 0], [2, 10, 400, 100]]) // WAVE 4
+wave.push([[2, 10, 30, 800], [1, 15, 200, 100], [2, 12, 30, 500], [3, 10, 300, 100]]) // WAVE 5
+wave.push([[3, 20, 400, 400], [0, 50, 1, 100], [3, 12, 30, 500], [2, 10, 300, 100], [3, 20, 400, 100]]) // WAVE 6
+wave.push([[2, 15, 50, 500], [3, 3, 30, 100], [3, 3, 30, 100], [2, 10, 400, 500], [3, 15, 500, 500], [4, 10, 300, 100]]) // WAVE 7
+wave.push([[4, 20, 200, 500], [3, 6, 300, 500], [4, 20, 200, 500], [2, 30, 100, 100]]) // WAVE 8
+wave.push([[1, 100, 100, 500], [2, 100, 200, 500], [3, 75, 400, 500], [4, 50, 200, 500]]) // WAVE 9
+wave.push([[5, 1, 0, 0]]) // WAVE 10
+var waveCash = [25, 50, 75, 100, 125, 150, 175, 200, 225];
+
+
 
 // INTERVALS
 var setupInterval;
@@ -58,6 +80,7 @@ var moveBalloonsInterval;
 var drawInterval;
 var towerShootInterval;
 var moveProjectilesInterval;
+var waveInterval;
 
 // INITIAL VALUES
 tower_buttons.forEach(function(button) {
@@ -65,6 +88,7 @@ tower_buttons.forEach(function(button) {
 })
 lives_count.classList.add('hidden');
 money_count.classList.add('hidden');
+sendWaveButton.classList.add('hidden');
 ctx.font = "30px Arial";
 ctx.fillText("Press Start", 180, 240);
 
@@ -85,13 +109,11 @@ ctx.canvas.addEventListener('click', function(event) {
         if (money >= towerTypes[tower_index].price) {
             for(var i = 0; i < towers.length; i++) {
                 if (isCollision(tempTower.x, tempTower.y, tempTower.radius, towers[i].x, towers[i].y, towers[i].radius)) {
-                    console.log("bad");
                     return;
                 }
             }
             for(var i = 0; i < path.length; i++) {
                 if (isCollision(tempTower.x, tempTower.y, tempTower.radius, path[i].x, path[i].y, path[i].radius)) {
-                    console.log("bad");
                     return;
                 }
             }
@@ -102,7 +124,6 @@ ctx.canvas.addEventListener('click', function(event) {
     } else if (makingMap) {
         for(var i = 0; i < objectives.length; i++) {
             if (isCollision(mouseX, mouseY, 5, objectives[i].x, objectives[i].y, objectives[i].radius)) {
-                console.log("bad");
                 return;
             }
         }
@@ -142,11 +163,11 @@ function setup() {
             }
         }
         if (balloons[0].x > c.width || balloons[0].x < 0 || balloons[0].y > c.height || balloons[0].y < 0) {
+            started = true;
             ctx.clearRect(0, 0, c.width, c.height);
             path.forEach(render);
             clearInterval(setupInterval);
             balloons = [];
-            sendBalloonsInterval = setInterval(sendBalloons, 900);
             moveBalloonsInterval = setInterval(moveBalloons, 10);
             drawInterval = setInterval(draw, 10);
             towerShootInterval = setInterval(towerShoot, 20);
@@ -156,13 +177,73 @@ function setup() {
             })
             lives_count.classList.remove('hidden');
             money_count.classList.remove('hidden');
+            sendWaveButton.classList.remove('hidden');
             description.innerText =descriptions[0];
-            tower_index = 0;
             towers_label.innerText = "Towers: ";
-            sendBalloons();
+            tower_index = 0;
+            wave_label.innerText = "Wave: 0/10";
         }
     }
 }
+
+function sendBalloons(layer) {
+    balloons.push({x: 0, y: 75, radius: balloonRadii[layer], movementSpeed: balloonSpeed[layer], counter: 0, layer: layer, color: balloonLayers[layer],
+        index: 0, seduced: false, hunterx: 0, huntery: 0, value: 10, move() {
+       if (this.seduced) {
+           if (this.x > this.hunterx) {
+               this.x -= 1
+           } else if (this.x < this.hunterx) {
+               this.x += 1
+           } 
+       
+           if (this.y > this.huntery) {
+               this.y -= 1
+           } else if (this.y < this.huntery) {
+               this.y += 1
+           } 
+       } else {
+           if (this.x > path[this.index].x) {
+               this.x -= 1
+           } else if (this.x < path[this.index].x) {
+               this.x += 1
+           } 
+       
+           if (this.y > path[this.index].y) {
+               this.y -= 1
+           } else if (this.y < path[this.index].y) {
+               this.y += 1
+           } 
+       }
+   }})
+}
+
+async function sendWave() {
+    fullWaveSent = false;
+    wave_label.innerText = "Wave: " + (waveIndex + 1) + "/10";
+    sendWaveButton.classList.add('hidden');
+    var curWave = wave[waveIndex];
+    moveBalloonsInterval = setInterval(moveBalloons, 10);
+    var i = 0;
+    while (i < curWave.length) {
+        var gap = curWave[i][2];
+        var rest = curWave[i][3]
+        quantity = curWave[i][1]
+        while (quantity > 0) {
+            if (!started) {return};
+            quantity--;
+            sendBalloons(curWave[i][0]);
+            await sleep(gap);
+        }
+        await sleep(rest)
+        i++;
+    }
+    waveIndex++;
+    fullWaveSent = true;
+}
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
 
 function draw() {
     ctx.clearRect(0, 0, c.width, c.height);
@@ -197,14 +278,22 @@ function towerShoot(){
                         
                         for(var i = 0; i < balloons.length; i++) {
                             if (isCollision(balloons[i].x, balloons[i].y, balloons[i].radius, checkX, checkY, 0.1)) {
-                                balloons[i].layer--;
-                                if (balloons[i].layer < 0) {
-                                    money += balloons[i].value;
-                                    money_count.innerText = "Cash: $" + money;
-                                    balloons.splice(i, 1);
+                                if (balloons[i].layer != 5) {
+                                    balloons[i].layer--;
+                                    if (balloons[i].layer < 0) {
+                                        money += balloons[i].value;
+                                        money_count.innerText = "Cash: $" + money;
+                                        balloons.splice(i, 1);
+                                    } else {
+                                        balloons[i].color = balloonLayers[balloons[i].layer];
+                                        balloons[i].radius = balloonRadii[balloons[i].layer];
+                                    }
+                                    return;
                                 } else {
-                                    balloons[i].color = balloonLayers[balloons[i].layer];
-                                    balloons[i].radius = balloonRadii[balloons[i].layer];
+                                    bossHealth--;
+                                    if (bossHealth == 0) {
+                                        win();
+                                    }
                                 }
                             }
                         }
@@ -216,14 +305,22 @@ function towerShoot(){
                         
                         for(var i = 0; i < balloons.length; i++) {
                             if (isCollision(balloons[i].x, balloons[i].y, balloons[i].radius, checkX, checkY, 0.1)) {
-                                balloons[i].layer--;
-                                if (balloons[i].layer < 0) {
-                                    money += balloons[i].value;
-                                    money_count.innerText = "Cash: $" + money;
-                                    balloons.splice(i, 1);
+                                if (balloons[i].layer != 5) {
+                                    balloons[i].layer--;
+                                    if (balloons[i].layer < 0) {
+                                        money += balloons[i].value;
+                                        money_count.innerText = "Cash: $" + money;
+                                        balloons.splice(i, 1);
+                                    } else {
+                                        balloons[i].color = balloonLayers[balloons[i].layer];
+                                        balloons[i].radius = balloonRadii[balloons[i].layer];
+                                    }
+                                    return;
                                 } else {
-                                    balloons[i].color = balloonLayers[balloons[i].layer];
-                                    balloons[i].radius = balloonRadii[balloons[i].layer];
+                                    bossHealth--;
+                                    if (bossHealth == 0) {
+                                        win();
+                                    }
                                 }
                             }
                         }
@@ -264,6 +361,11 @@ function towerShoot(){
                 element.counter = naman_time;
                 element.color = "white"
             }
+        } else if (element.name == "Sandeepan") { 
+            element.angle += 0.1;
+            element.armX = element.range * Math.sin(element.angle) + element.x;
+            element.armY = element.range * Math.cos(element.angle) + element.y;
+            return;
         }
     });
 }
@@ -272,10 +374,12 @@ function shoot(item, target) {
     item.counter = 0;
     // MOVE THE TARGET 5 times ahead
     if (item.name == "Hunter") {
-        target.seduced = true;
-        target.hunterx = item.x;
-        target.huntery = item.y;
-        return;
+        if (target.layer != 5) {
+            target.seduced = true;
+            target.hunterx = item.x;
+            target.huntery = item.y;
+            return;
+        }
     }
     var future = {x: target.x, y: target.y, radius: 5, color: "red", index: target.index, move() {
         if (this.x > path[this.index].x) {
@@ -337,14 +441,23 @@ function moveProjectiles() {
                 if (projectiles[i].towerName == "Zach") {
                     balloons[z].movementSpeed = 1;
                 } else {
-                    balloons[z].layer--;
-                    if (balloons[z].layer < 0) {
-                        money += balloons[z].value;
-                        money_count.innerText = "Cash: $" + money;
-                        balloons.splice(z, 1);
+                    if (balloons[z].layer != 5) {
+                        balloons[z].layer--;
+                        if (balloons[z].layer < 0) {
+                            money += balloons[z].value;
+                            money_count.innerText = "Cash: $" + money;
+                            balloons.splice(z, 1);
+                        } else {
+                            balloons[z].color = balloonLayers[balloons[z].layer];
+                            balloons[z].radius = balloonRadii[balloons[z].layer];
+                        }
+                        projectiles.splice(i, 1);
+                        return;
                     } else {
-                        balloons[z].color = balloonLayers[balloons[z].layer];
-                        balloons[z].radius = balloonRadii[balloons[z].layer];
+                        bossHealth--;
+                        if (bossHealth == 0) {
+                            win();
+                        }
                     }
                     projectiles.splice(i, 1);
                 }
@@ -360,7 +473,7 @@ function moveProjectiles() {
 function moveBalloons() {
     for(var i = 0; i < balloons.length; i++) {
         balloons[i].counter += balloons[i].movementSpeed;
-        if (balloons[i].counter >= 3)  {
+        if (balloons[i].counter >=6)  {
             balloons[i].counter = 0;
             balloons[i].move();
             if (balloons[i].seduced) {
@@ -372,8 +485,8 @@ function moveBalloons() {
                 if (pathCollision(path[balloons[i].index].x, path[balloons[i].index].y, path[balloons[i].index].radius, i)) {
                     balloons[i].index++;
                     if (balloons[i].index == path.length) {
+                        lives -= (balloons[i].layer + 1);
                         balloons.splice(i, 1);
-                        lives--;
                         lives_count.innerText = ("Lives: " + lives);
                         if (lives == 0) {
                             gameOver();
@@ -382,6 +495,12 @@ function moveBalloons() {
                 }
             }
         }
+    }
+
+    if (balloons.length == 0 && fullWaveSent) {
+        clearInterval(moveBalloonsInterval);
+        money += waveCash[waveIndex - 1];
+        sendWaveButton.classList.remove('hidden');
     }
 }
 
@@ -394,39 +513,27 @@ function makeMap() {
     makingMap = true;
 }
 
-function sendBalloons() {
-    balloons.push({x: 0, y: 75, radius: balloonRadii[2], movementSpeed: 2, counter: 0, layer: 2, color: "green", index: 0, seduced: false, hunterx: 0, huntery: 0, value: 25, move() {
-        if (this.seduced) {
-            if (this.x > this.hunterx) {
-                this.x -= 1
-            } else if (this.x < this.hunterx) {
-                this.x += 1
-            } 
-        
-            if (this.y > this.huntery) {
-                this.y -= 1
-            } else if (this.y < this.huntery) {
-                this.y += 1
-            } 
-        } else {
-            if (this.x > path[this.index].x) {
-                this.x -= 1
-            } else if (this.x < path[this.index].x) {
-                this.x += 1
-            } 
-        
-            if (this.y > path[this.index].y) {
-                this.y -= 1
-            } else if (this.y < path[this.index].y) {
-                this.y += 1
-            } 
-        }
-    }})
-}
-
 function start() {
-    started = true;
-    balloons = [{x: 0, y: 75, radius: 5, color: "black", index: 0, move() {
+    var leftDist = objectives[0].x;
+    var rightDist = c.width - objectives[0].x;
+    var topDist = objectives[0].y;
+    var bottomDist = c.height - objectives[0].y;
+    var x, y;
+    
+    if (leftDist == Math.min(leftDist, rightDist, topDist, bottomDist)) {
+        x = -1;
+        y = objectives[0].y;
+    } else if (rightDist == Math.min(leftDist, rightDist, topDist, bottomDist)) {
+        x = 501;
+        y = objectives[0].y;
+    } else if (topDist == Math.min(leftDist, rightDist, topDist, bottomDist)) {
+        x = objectives[0].x;
+        y = -1;
+    } else {
+        x = objectives[0].x;
+        y = 501;
+    }
+    balloons = [{x: x, y: y, radius: 5, color: "black", index: 0, move() {
         if (this.x > objectives[this.index].x) {
             this.x -= 1
         } else if (this.x < objectives[this.index].x) {
@@ -452,10 +559,51 @@ function changeTower(index) {
 
 function gameOver() {
     changeTower(0);
+    ctx.font = "30px Arial";
+    ctx.fillStyle = 'red'
+    ctx.fillText("Game Over", 180, 240);
+    ctx.fillText("You made it to round " + (waveIndex + 1), 100, 270);
     started = false;
     tower_index = -1;
     lives = 10;
     money = 300;
+    mapMakePoints = 5;
+    waveIndex = 0;
+    objectives = [];
+    towers = [];
+    projectiles = [];
+    path = [];
+    clearInterval(sendBalloonsInterval);
+    clearInterval(moveBalloonsInterval);
+    clearInterval(drawInterval);
+    clearInterval(towerShootInterval);
+    clearInterval(moveProjectilesInterval);
+    tower_buttons.forEach(function(button) {
+        button.classList.add('hidden');
+    })
+    lives_count.classList.add('hidden');
+    lives_count.innerText = ("Lives: " + lives);
+    money_count.classList.add('hidden');
+    money_count.innerText = "Cash: $" + money;
+    description.innerText = "";
+    towers_label.innerText = "";
+    wave_label.innerText = "";
+    startButton.classList.remove('hidden');
+}
+
+function win() {
+    changeTower(0);
+    ctx.font = "30px Arial";
+    ctx.fillStyle = 'blue';
+    ctx.fillRect(100, 200, 300, 300);
+    ctx.fillStyle = 'red';
+    ctx.fillText("Congratulations!", 180, 240);
+    ctx.fillText("You win!", 190, 270);
+    started = false;
+    tower_index = -1;
+    lives = 10;
+    money = 300;
+    waveIndex = 0;
     mapMakePoints = 5;
     objectives = [];
     towers = [];
@@ -466,7 +614,6 @@ function gameOver() {
     clearInterval(drawInterval);
     clearInterval(towerShootInterval);
     clearInterval(moveProjectilesInterval);
-    ctx.clearRect(0, 0, c.width, c.height);
     tower_buttons.forEach(function(button) {
         button.classList.add('hidden');
     })
@@ -476,6 +623,7 @@ function gameOver() {
     money_count.innerText = "Cash: $" + money;
     description.innerText = "";
     towers_label.innerText = "";
+    wave_label.innerText = "";
     startButton.classList.remove('hidden');
 }
 
