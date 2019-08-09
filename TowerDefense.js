@@ -59,6 +59,15 @@ var drawInterval;
 var towerShootInterval;
 var moveProjectilesInterval;
 
+// INITIAL VALUES
+tower_buttons.forEach(function(button) {
+    button.classList.add('hidden');
+})
+lives_count.classList.add('hidden');
+money_count.classList.add('hidden');
+ctx.font = "30px Arial";
+ctx.fillText("Press Start", 180, 240);
+
 // EVENT LISTENERS
 ctx.canvas.addEventListener('click', function(event) {
     mouseX = event.clientX - ctx.canvas.offsetLeft;
@@ -107,49 +116,14 @@ ctx.canvas.addEventListener('click', function(event) {
     }
 })
 
-// INITIAL
-tower_buttons.forEach(function(button) {
-    button.classList.add('hidden');
-})
-lives_count.classList.add('hidden');
-money_count.classList.add('hidden');
-ctx.font = "30px Arial";
-ctx.fillText("Press Start", 180, 240);
-
-function makeMap() {
-    startButton.classList.add('hidden')
-    startButton.innerText = "Restart";
-    ctx.clearRect(0, 0, c.width, c.height);
-    towers_label.innerText = "Create your map (points left: 5)";
-    makingMap = true;
-}
-
-function start() {
-    started = true;
-    balloons = [{x: 0, y: 75, radius: 5, color: "black", index: 0, move() {
-        if (this.x > objectives[this.index].x) {
-            this.x -= 1
-        } else if (this.x < objectives[this.index].x) {
-            this.x += 1
-        }
-    
-        if (this.y > objectives[this.index].y) {
-            this.y -= 1
-        } else if (this.y < objectives[this.index].y) {
-            this.y += 1
-        } 
-    }}];
-    setupInterval = setInterval(setup, 1);
-    towers_label.innerText = "LOADING";
-}
-
+// INTERVAL FUNCTIONS
 function setup() {
     ctx.clearRect(0, 0, c.width, c.height);
     path.push({x: balloons[0].x, y: balloons[0].y, radius: balloons[0].radius, color: "#E5A441"});
     balloons[0].move();
     render(balloons[0]);
     objectives.forEach(render);
-    if (pathCollision(objectives[balloons[0].index].x, objectives[balloons[0].index].y, objectives[balloons[0].index].radius)) {
+    if (pathCollision(objectives[balloons[0].index].x, objectives[balloons[0].index].y, objectives[balloons[0].index].radius, 0)) {
         balloons[0].index += 1;
         if (balloons[0].index == objectives.length) {
             var leftDist = balloons[0].x;
@@ -190,70 +164,14 @@ function setup() {
     }
 }
 
-function sendBalloons() {
-    balloons.push({x: 0, y: 75, radius: balloonRadii[2], movementSpeed: 2, counter: 0, layer: 2, color: "green", index: 0, seduced: false, hunterx: 0, huntery: 0, value: 25, move() {
-        if (this.seduced) {
-            if (this.x > this.hunterx) {
-                this.x -= 1
-            } else if (this.x < this.hunterx) {
-                this.x += 1
-            } 
-        
-            if (this.y > this.huntery) {
-                this.y -= 1
-            } else if (this.y < this.huntery) {
-                this.y += 1
-            } 
-        } else {
-            if (this.x > path[this.index].x) {
-                this.x -= 1
-            } else if (this.x < path[this.index].x) {
-                this.x += 1
-            } 
-        
-            if (this.y > path[this.index].y) {
-                this.y -= 1
-            } else if (this.y < path[this.index].y) {
-                this.y += 1
-            } 
-        }
-    }})
-}
-
-function changeTower(index) {
-    tower_buttons[tower_index].style = "color: black";
-    tower_buttons[index].style = "color: red"
-    tower_index = index;
-    description.innerText = descriptions[index];
-}
-
-function gameOver() {
-    changeTower(0);
-    started = false;
-    tower_index = -1;
-    lives = 10;
-    money = 300;
-    mapMakePoints = 5;
-    objectives = [];
-    towers = [];
-    projectiles = [];
-    path = [];
-    clearInterval(sendBalloonsInterval);
-    clearInterval(moveBalloonsInterval);
-    clearInterval(drawInterval);
-    clearInterval(towerShootInterval);
-    clearInterval(moveProjectilesInterval);
+function draw() {
     ctx.clearRect(0, 0, c.width, c.height);
-    tower_buttons.forEach(function(button) {
-        button.classList.add('hidden');
-    })
-    lives_count.classList.add('hidden');
-    lives_count.innerText = ("Lives: " + lives);
-    money_count.classList.add('hidden');
-    money_count.innerText = "Cash: $" + money;
-    description.innerText = "";
-    towers_label.innerText = "";
-    startButton.classList.remove('hidden');
+    ctx.fillStyle = '#4D9B41';
+    ctx.fillRect(0, 0, c.width, c.height);
+    path.forEach(render);
+    balloons.forEach(render);
+    towers.forEach(render);
+    projectiles.forEach(render);
 }
 
 function towerShoot(){
@@ -350,22 +268,6 @@ function towerShoot(){
     });
 }
 
-function goBerserk(item) {
-    var berserkBullets = [];
-    berserkBullets.push({x: item.x, y: item.y, radius: 4, xChange: 1, yChange: 0, color: "yellow", towerName: "Naman"});
-    berserkBullets.push({x: item.x, y: item.y, radius: 4, xChange: -1, yChange: 0, color: "yellow", towerName: "Naman"});
-    berserkBullets.push({x: item.x, y: item.y, radius: 4, xChange: 0, yChange: 1, color: "yellow", towerName: "Naman"});
-    berserkBullets.push({x: item.x, y: item.y, radius: 4, xChange: 0, yChange: -1, color: "yellow", towerName: "Naman"});
-    berserkBullets.push({x: item.x, y: item.y, radius: 4, xChange: Math.sqrt(0.5), yChange: Math.sqrt(0.5), color: "yellow", towerName: "Naman"});
-    berserkBullets.push({x: item.x, y: item.y, radius: 4, xChange: -1 * Math.sqrt(0.5), yChange: Math.sqrt(0.5), color: "yellow", towerName: "Naman"});
-    berserkBullets.push({x: item.x, y: item.y, radius: 4, xChange: -1 * Math.sqrt(0.5), yChange: -1 * Math.sqrt(0.5), color: "yellow", towerName: "Naman"});
-    berserkBullets.push({x: item.x, y: item.y, radius: 4, xChange: Math.sqrt(0.5), yChange: -1 * Math.sqrt(0.5), color: "yellow", towerName: "Naman"});
-
-    for (var i = 0; i < berserkBullets.length; i++) {
-        projectiles.push(berserkBullets[i]);
-    }
-}
-
 function shoot(item, target) {
     item.counter = 0;
     // MOVE THE TARGET 5 times ahead
@@ -449,7 +351,7 @@ function moveProjectiles() {
                 break;
             }
         }
-        if (projectiles[i].x > c.width || projectiles[i].y > c.height) {
+        if (projectiles[i] != null && (projectiles[i].x > c.width || projectiles[i].y > c.height)) {
             projectiles.splice(i, 1);
         }
     }
@@ -467,7 +369,7 @@ function moveBalloons() {
                     balloons.splice(i, 1)
                 }
             } else {
-                if (pathCollision2(path[balloons[i].index].x, path[balloons[i].index].y, path[balloons[i].index].radius, i)) {
+                if (pathCollision(path[balloons[i].index].x, path[balloons[i].index].y, path[balloons[i].index].radius, i)) {
                     balloons[i].index++;
                     if (balloons[i].index == path.length) {
                         balloons.splice(i, 1);
@@ -483,27 +385,122 @@ function moveBalloons() {
     }
 }
 
+// OTHER FUNCTIONS
+function makeMap() {
+    startButton.classList.add('hidden')
+    startButton.innerText = "Restart";
+    ctx.clearRect(0, 0, c.width, c.height);
+    towers_label.innerText = "Create your map (points left: 5)";
+    makingMap = true;
+}
+
+function sendBalloons() {
+    balloons.push({x: 0, y: 75, radius: balloonRadii[2], movementSpeed: 2, counter: 0, layer: 2, color: "green", index: 0, seduced: false, hunterx: 0, huntery: 0, value: 25, move() {
+        if (this.seduced) {
+            if (this.x > this.hunterx) {
+                this.x -= 1
+            } else if (this.x < this.hunterx) {
+                this.x += 1
+            } 
+        
+            if (this.y > this.huntery) {
+                this.y -= 1
+            } else if (this.y < this.huntery) {
+                this.y += 1
+            } 
+        } else {
+            if (this.x > path[this.index].x) {
+                this.x -= 1
+            } else if (this.x < path[this.index].x) {
+                this.x += 1
+            } 
+        
+            if (this.y > path[this.index].y) {
+                this.y -= 1
+            } else if (this.y < path[this.index].y) {
+                this.y += 1
+            } 
+        }
+    }})
+}
+
+function start() {
+    started = true;
+    balloons = [{x: 0, y: 75, radius: 5, color: "black", index: 0, move() {
+        if (this.x > objectives[this.index].x) {
+            this.x -= 1
+        } else if (this.x < objectives[this.index].x) {
+            this.x += 1
+        }
+    
+        if (this.y > objectives[this.index].y) {
+            this.y -= 1
+        } else if (this.y < objectives[this.index].y) {
+            this.y += 1
+        } 
+    }}];
+    setupInterval = setInterval(setup, 1);
+    towers_label.innerText = "LOADING";
+}
+
+function changeTower(index) {
+    tower_buttons[tower_index].style = "color: black";
+    tower_buttons[index].style = "color: red"
+    tower_index = index;
+    description.innerText = descriptions[index];
+}
+
+function gameOver() {
+    changeTower(0);
+    started = false;
+    tower_index = -1;
+    lives = 10;
+    money = 300;
+    mapMakePoints = 5;
+    objectives = [];
+    towers = [];
+    projectiles = [];
+    path = [];
+    clearInterval(sendBalloonsInterval);
+    clearInterval(moveBalloonsInterval);
+    clearInterval(drawInterval);
+    clearInterval(towerShootInterval);
+    clearInterval(moveProjectilesInterval);
+    ctx.clearRect(0, 0, c.width, c.height);
+    tower_buttons.forEach(function(button) {
+        button.classList.add('hidden');
+    })
+    lives_count.classList.add('hidden');
+    lives_count.innerText = ("Lives: " + lives);
+    money_count.classList.add('hidden');
+    money_count.innerText = "Cash: $" + money;
+    description.innerText = "";
+    towers_label.innerText = "";
+    startButton.classList.remove('hidden');
+}
+
+function goBerserk(item) {
+    var berserkBullets = [];
+    berserkBullets.push({x: item.x, y: item.y, radius: 4, xChange: 1, yChange: 0, color: "yellow", towerName: "Naman"});
+    berserkBullets.push({x: item.x, y: item.y, radius: 4, xChange: -1, yChange: 0, color: "yellow", towerName: "Naman"});
+    berserkBullets.push({x: item.x, y: item.y, radius: 4, xChange: 0, yChange: 1, color: "yellow", towerName: "Naman"});
+    berserkBullets.push({x: item.x, y: item.y, radius: 4, xChange: 0, yChange: -1, color: "yellow", towerName: "Naman"});
+    berserkBullets.push({x: item.x, y: item.y, radius: 4, xChange: Math.sqrt(0.5), yChange: Math.sqrt(0.5), color: "yellow", towerName: "Naman"});
+    berserkBullets.push({x: item.x, y: item.y, radius: 4, xChange: -1 * Math.sqrt(0.5), yChange: Math.sqrt(0.5), color: "yellow", towerName: "Naman"});
+    berserkBullets.push({x: item.x, y: item.y, radius: 4, xChange: -1 * Math.sqrt(0.5), yChange: -1 * Math.sqrt(0.5), color: "yellow", towerName: "Naman"});
+    berserkBullets.push({x: item.x, y: item.y, radius: 4, xChange: Math.sqrt(0.5), yChange: -1 * Math.sqrt(0.5), color: "yellow", towerName: "Naman"});
+
+    for (var i = 0; i < berserkBullets.length; i++) {
+        projectiles.push(berserkBullets[i]);
+    }
+}
+
 function isCollision(x1, y1, radius1, x2, y2, radius2) {
     var distance = Math.sqrt(Math.pow(Math.abs(x1 - x2), 2) + Math.pow(Math.abs(y1 - y2), 2));
     return (distance < (radius1 + radius2));
 }
 
-function draw() {
-    ctx.clearRect(0, 0, c.width, c.height);
-    ctx.fillStyle = '#4D9B41';
-    ctx.fillRect(0, 0, c.width, c.height);
-    path.forEach(render);
-    balloons.forEach(render);
-    towers.forEach(render);
-    projectiles.forEach(render);
-}
-
-function pathCollision(x, y, radius) {
-    var distance = Math.sqrt(Math.pow(Math.abs(x - balloons[0].x), 2) + Math.pow(Math.abs(y - balloons[0].y), 2))
-    return (distance == 0)
-}
-
-function pathCollision2(x, y, radius, index) {
+function pathCollision(x, y, radius, index) {
     var distance = Math.sqrt(Math.pow(Math.abs(x - balloons[index].x), 2) + Math.pow(Math.abs(y - balloons[index].y), 2))
     return (distance == 0)
 }
